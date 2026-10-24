@@ -1,27 +1,43 @@
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import Search from "../components/Search";
-import beersJSON from "./../assets/beers.json";
 import axios from "axios";
 
+const API_URL = "https://beers-api.edu.ironhack.com/beers";
+
 function AllBeersPage() {
-  const [beers, setBeers] = useState(beersJSON);
+  const [beers, setBeers] = useState([]);
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
-    axios.get("https://beers-api.edu.ironhack.com/beers").then((response) => {
-      setBeers(response.data);
-    });
-  }, []);
+    // Ignore responses from stale requests (e.g. the user kept typing)
+    let ignore = false;
+
+    const url = query.trim()
+      ? `${API_URL}/search?q=${encodeURIComponent(query.trim())}`
+      : API_URL;
+
+    axios
+      .get(url)
+      .then((response) => {
+        if (!ignore) setBeers(response.data);
+      })
+      .catch((error) => console.log(error));
+
+    return () => {
+      ignore = true;
+    };
+  }, [query]);
 
   return (
     <>
-      <Search />
+      <Search query={query} onSearch={setQuery} />
 
       <div className="d-inline-flex flex-wrap justify-content-center align-items-center w-100 p-4">
         {beers &&
-          beers.map((beer, i) => {
+          beers.map((beer) => {
             return (
-              <div key={i}>
+              <div key={beer._id}>
                 <Link to={"/beers/" + beer._id}>
                   <div
                     className="card m-2 p-2 text-center"
